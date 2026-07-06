@@ -284,7 +284,7 @@
           </div>
           <div class="field">
             <label for="f-phone">Telephone</label>
-            <input type="tel" id="f-phone" name="phone" required autocomplete="tel" placeholder="Country code + number">
+            <input type="tel" id="f-phone" name="phone" required autocomplete="tel" value="+1 " placeholder="+1 (555) 555-5555">
           </div>
         </div>
         <div class="field">
@@ -310,6 +310,9 @@
         <button type="submit" class="submit" id="submit-btn">Send inquiry</button>
         <p class="form-note" id="form-note">
           Replies are sent from a personal address, usually within an hour.
+        </p>
+        <p class="form-reset" id="form-reset" hidden>
+          <a href="#inquire" id="reset-link">Send another inquiry</a>
         </p>
       </form>
       <nav class="back-to-toc">
@@ -371,7 +374,12 @@
         if (note) {
           note.textContent = 'Thank you for completing the form. Your cell phone has been verified. We look forward to meeting you.';
           note.style.color = '#2a7a3f';
+          note.classList.add('success');
         }
+        var submitBtn = document.getElementById('submit-btn');
+        if (submitBtn) submitBtn.style.display = 'none';
+        var resetWrap = document.getElementById('form-reset');
+        if (resetWrap) resetWrap.hidden = false;
       }
     })();
 
@@ -384,9 +392,39 @@
       var note = document.getElementById('form-note');
       var otpStep = document.getElementById('otp-step');
       var otpInput = document.getElementById('f-otp');
+      var resetWrap = document.getElementById('form-reset');
+      var resetLink = document.getElementById('reset-link');
       if (!form || !submitBtn) return;
 
       var stage = 'collect'; // collect -> verify -> done
+
+      function resetForm() {
+        ['f-name', 'f-email', 'f-address', 'f-message'].forEach(function (id) {
+          var el = document.getElementById(id);
+          if (el) { el.value = ''; el.readOnly = false; }
+        });
+        var phone = document.getElementById('f-phone');
+        if (phone) { phone.value = '+1 '; phone.readOnly = false; }
+        if (otpInput) otpInput.value = '';
+        if (otpStep) otpStep.hidden = true;
+        stage = 'collect';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Send inquiry';
+        submitBtn.style.display = '';
+        note.classList.remove('success');
+        note.style.color = '';
+        note.textContent = 'Replies are sent from a personal address, usually within an hour.';
+        if (resetWrap) resetWrap.hidden = true;
+        var nameEl = document.getElementById('f-name');
+        if (nameEl) nameEl.focus();
+      }
+
+      if (resetLink) {
+        resetLink.addEventListener('click', function (ev) {
+          ev.preventDefault();
+          resetForm();
+        });
+      }
 
       function setNote(text, color, success) {
         note.textContent = text;
@@ -484,8 +522,10 @@
           }).then(function (r) {
             if (!r.ok) throw new Error('Submission failed.');
             stage = 'done';
-            form.style.display = 'none';
+            if (otpStep) otpStep.hidden = true;
+            submitBtn.style.display = 'none';
             setNote('Thank you for completing the form. Your cell phone has been verified. We look forward to meeting you.', '#2a7a3f', true);
+            if (resetWrap) resetWrap.hidden = false;
           }).catch(function (err) {
             submitBtn.disabled = false;
             submitBtn.textContent = 'Verify and send';

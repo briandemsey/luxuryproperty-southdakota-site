@@ -586,6 +586,24 @@ h2 {
   text-align: center;
   margin-top: 2rem;
 }
+.form-reset {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+.form-reset a {
+  font-family: var(--sans);
+  font-size: 0.75rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink);
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--line);
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+.form-reset a:hover {
+  color: var(--accent-deep);
+  border-bottom-color: var(--accent-deep);
+}
 
 /* ===================== FOOTER ===================== */
 footer {
