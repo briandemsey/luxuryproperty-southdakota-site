@@ -520,6 +520,31 @@ h2 {
   outline: none;
   transition: border-color 0.15s ease, background 0.15s ease;
 }
+.field input[readonly], .field textarea[readonly] {
+  color: var(--muted);
+  background: #f2eee5;
+}
+.otp-step {
+  margin-top: 1.5rem;
+  padding: 1.25rem 1.25rem 0.25rem 1.25rem;
+  border: 1px solid var(--accent);
+  background: #fdfbf3;
+}
+.otp-step label {
+  color: var(--ink-soft);
+  font-family: var(--serif);
+  font-size: 0.95rem;
+  letter-spacing: normal;
+  text-transform: none;
+  font-style: italic;
+  line-height: 1.5;
+  margin-bottom: 0.6rem;
+}
+#f-otp {
+  font-family: var(--sans);
+  letter-spacing: 0.35em;
+  font-size: 1.1rem;
+}
 .field input:focus, .field textarea:focus {
   border-color: var(--accent);
   background: #fff;

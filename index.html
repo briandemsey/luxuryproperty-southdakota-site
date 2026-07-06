@@ -232,7 +232,7 @@
         <div class="price-eyebrow">Offered at</div>
         <div class="price">$2,000,000</div>
         <div class="price-note">
-          Fully furnished. Move-in ready. Special consideration will be given to buyers presenting seriously.
+          Fully furnished. Move-in ready.
         </div>
       </div>
       <nav class="back-to-toc">
@@ -248,15 +248,9 @@
       <div class="eyebrow">VII &nbsp;·&nbsp; Inquire</div>
       <h2>A private introduction.</h2>
       <p class="lead">
-        Correspondence is welcomed from parties who are able to introduce themselves in full &mdash; name, telephone, email, and a physical mailing address. Replies are sent from a personal address, not a service. Anonymous inquiries are not answered.
+        We look forward to meeting you. Please complete and submit the form. We will return a phone call very soon following verification.
       </p>
-      <form id="inquire-form" class="inquire-form"
-            action="https://api.web3forms.com/submit" method="POST" autocomplete="on">
-        <input type="hidden" name="access_key" value="YOUR_KEY_HERE">
-        <input type="hidden" name="subject" value="Inquiry — 2111 Vantage Circle, Spearfish SD">
-        <input type="hidden" name="from_name" value="luxuryproperty-southdakota.com">
-        <input type="hidden" name="redirect" value="https://luxuryproperty-southdakota.com/?sent=true">
-        <input type="checkbox" name="botcheck" style="display:none" tabindex="-1" autocomplete="off">
+      <form id="inquire-form" class="inquire-form" autocomplete="on" novalidate>
         <div class="row">
           <div class="field">
             <label for="f-name">Full name</label>
@@ -276,16 +270,20 @@
           <textarea id="f-address" name="address" rows="2" required autocomplete="street-address" placeholder="Street, city, state or region, postal code, country"></textarea>
         </div>
         <div class="field">
-          <label for="f-representation">Professional representation, if any</label>
-          <input type="text" id="f-representation" name="representation" autocomplete="off" placeholder="Advisor, attorney, or family office (optional)">
-        </div>
-        <div class="field">
           <label for="f-message">A brief note</label>
           <textarea id="f-message" name="message" rows="5" required placeholder="Purpose of interest, timing, and any other information you wish to place on the record."></textarea>
         </div>
-        <button type="submit" class="submit">Send inquiry</button>
+
+        <div id="otp-step" class="otp-step" hidden>
+          <div class="field">
+            <label for="f-otp">A 6-digit code has just been texted to your telephone. Enter it here to complete your inquiry.</label>
+            <input type="text" inputmode="numeric" pattern="[0-9]*" id="f-otp" name="otp" maxlength="10" autocomplete="one-time-code" placeholder="6-digit code">
+          </div>
+        </div>
+
+        <button type="submit" class="submit" id="submit-btn">Send inquiry</button>
         <p class="form-note" id="form-note">
-          Replies are sent from a personal address, usually within two business days.
+          Replies are sent from a personal address, usually within an hour.
         </p>
       </form>
       <nav class="back-to-toc">
@@ -345,10 +343,125 @@
         show('inquire', { updateHash: false });
         var note = document.getElementById('form-note');
         if (note) {
-          note.textContent = 'Your inquiry has been received. You will hear back from a personal address, usually within two business days.';
+          note.textContent = 'Your inquiry has been received. You will hear back from a personal address, usually within an hour.';
           note.style.color = '#2a7a3f';
         }
       }
+    })();
+
+    // Verification-gated inquiry form
+    (function () {
+      var VERIFY_BASE = 'https://lpsd-verify.onrender.com';
+      var WEB3FORMS_KEY = '094b4d7e-981d-46a7-bbdc-254071bdde27';
+      var form = document.getElementById('inquire-form');
+      var submitBtn = document.getElementById('submit-btn');
+      var note = document.getElementById('form-note');
+      var otpStep = document.getElementById('otp-step');
+      var otpInput = document.getElementById('f-otp');
+      if (!form || !submitBtn) return;
+
+      var stage = 'collect'; // collect -> verify -> done
+
+      function setNote(text, color) {
+        note.textContent = text;
+        note.style.color = color || '';
+      }
+      function lockFields(lock) {
+        ['f-name', 'f-phone', 'f-email', 'f-address', 'f-message'].forEach(function (id) {
+          var el = document.getElementById(id);
+          if (el) el.readOnly = lock;
+        });
+      }
+      function normPhone(v) {
+        var s = (v || '').replace(/[^0-9+]/g, '').trim();
+        return s;
+      }
+
+      form.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+
+        if (stage === 'collect') {
+          if (!form.reportValidity()) return;
+          var phone = normPhone(document.getElementById('f-phone').value);
+          if (!phone.startsWith('+') || phone.length < 8) {
+            setNote('Please include your country code, for example +1 for the United States.', '#a04040');
+            return;
+          }
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Sending code...';
+          setNote('Requesting verification code.', '');
+
+          fetch(VERIFY_BASE + '/verify/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone: phone })
+          }).then(function (r) {
+            return r.json().then(function (b) { return { ok: r.ok, body: b }; });
+          }).then(function (res) {
+            if (!res.ok) {
+              throw new Error((res.body && res.body.detail) || 'Verification could not be started.');
+            }
+            stage = 'verify';
+            lockFields(true);
+            otpStep.hidden = false;
+            otpInput.focus();
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Verify and send';
+            setNote('A 6-digit code has been sent by text message. Please enter it above.', '');
+          }).catch(function (err) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Send inquiry';
+            setNote('We could not send a code: ' + err.message, '#a04040');
+          });
+          return;
+        }
+
+        if (stage === 'verify') {
+          var phone = normPhone(document.getElementById('f-phone').value);
+          var code = (otpInput.value || '').replace(/[^0-9]/g, '');
+          if (code.length < 4) {
+            setNote('Please enter the code you received.', '#a04040');
+            return;
+          }
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Verifying...';
+          setNote('Verifying code.', '');
+
+          fetch(VERIFY_BASE + '/verify/check', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone: phone, code: code })
+          }).then(function (r) {
+            return r.json().then(function (b) { return { ok: r.ok, body: b }; });
+          }).then(function (res) {
+            if (!res.ok) {
+              throw new Error((res.body && res.body.detail) || 'Verification failed.');
+            }
+            // Verified. POST full payload to Web3Forms.
+            submitBtn.textContent = 'Sending...';
+            var fd = new FormData();
+            fd.append('access_key', WEB3FORMS_KEY);
+            fd.append('subject', 'Inquiry — 2111 Vantage Circle, Spearfish SD');
+            fd.append('from_name', 'luxuryproperty-southdakota.com');
+            fd.append('name', document.getElementById('f-name').value);
+            fd.append('phone', phone);
+            fd.append('email', document.getElementById('f-email').value);
+            fd.append('address', document.getElementById('f-address').value);
+            fd.append('message', document.getElementById('f-message').value);
+            fd.append('phone_verified', 'yes');
+            return fetch('https://api.web3forms.com/submit', { method: 'POST', body: fd });
+          }).then(function (r) {
+            if (!r.ok) throw new Error('Submission failed.');
+            stage = 'done';
+            form.style.display = 'none';
+            setNote('Your inquiry has been received. You will hear back from a personal address, usually within an hour.', '#2a7a3f');
+          }).catch(function (err) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Verify and send';
+            setNote('We could not complete the submission: ' + err.message, '#a04040');
+          });
+        }
+      });
     })();
   </script>
 
