@@ -24,9 +24,8 @@ html, body { margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 
 /* ===================== VIEW ROUTING ===================== */
-.view { display: none; }
-.view.active { display: block; }
-.view.active.hero { display: block; }
+.view { display: none !important; }
+.view.active { display: block !important; }
 
 body {
   background: var(--bg);
@@ -244,6 +243,15 @@ img { max-width: 100%; height: auto; display: block; }
   color: var(--accent-deep);
   border-bottom-color: var(--accent-deep);
   letter-spacing: 0.32em;
+}
+.section-footer {
+  text-align: center;
+  margin-top: 2rem;
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  font-style: italic;
 }
 
 /* ===================== READING COLUMN ===================== */
