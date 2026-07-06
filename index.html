@@ -343,7 +343,7 @@
         show('inquire', { updateHash: false });
         var note = document.getElementById('form-note');
         if (note) {
-          note.textContent = 'Your inquiry has been received. You will hear back from a personal address, usually within an hour.';
+          note.textContent = 'Thank you for completing the form. Your cell phone has been verified. We look forward to meeting you.';
           note.style.color = '#2a7a3f';
         }
       }
@@ -362,9 +362,14 @@
 
       var stage = 'collect'; // collect -> verify -> done
 
-      function setNote(text, color) {
+      function setNote(text, color, success) {
         note.textContent = text;
         note.style.color = color || '';
+        if (success) {
+          note.classList.add('success');
+        } else {
+          note.classList.remove('success');
+        }
       }
       function lockFields(lock) {
         ['f-name', 'f-phone', 'f-email', 'f-address', 'f-message'].forEach(function (id) {
@@ -454,7 +459,7 @@
             if (!r.ok) throw new Error('Submission failed.');
             stage = 'done';
             form.style.display = 'none';
-            setNote('Your inquiry has been received. You will hear back from a personal address, usually within an hour.', '#2a7a3f');
+            setNote('Thank you for completing the form. Your cell phone has been verified. We look forward to meeting you.', '#2a7a3f', true);
           }).catch(function (err) {
             submitBtn.disabled = false;
             submitBtn.textContent = 'Verify and send';

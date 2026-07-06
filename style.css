@@ -576,6 +576,18 @@ h2 {
   color: var(--muted);
   font-style: italic;
 }
+.form-note.success {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.15rem;
+  line-height: 1.6;
+  color: #2a7a3f;
+  padding: 2rem 1.5rem;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  text-align: center;
+  margin-top: 2rem;
+}
 
 /* ===================== FOOTER ===================== */
 footer {
