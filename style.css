@@ -402,6 +402,42 @@ h2 {
   border-top: 1px solid var(--line);
 }
 
+/* ===================== DRAWINGS ===================== */
+.drawings-grid {
+  max-width: var(--max-page);
+  margin: 3rem auto 0 auto;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 3rem;
+}
+.drawings-grid figure {
+  margin: 0;
+  padding: 0;
+  background: #ffffff;
+  border: 1px solid var(--line);
+}
+.drawings-grid img {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: #ffffff;
+}
+.drawings-grid figcaption {
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: center;
+  padding: 1rem 0.5rem;
+  border-top: 1px solid var(--line);
+}
+@media (min-width: 900px) {
+  .drawings-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 /* ===================== GALLERY ===================== */
 .gallery {
   padding: 8rem 1.5rem 8rem 1.5rem;
