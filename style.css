@@ -672,10 +672,12 @@ h2 {
 
 /* ===================== REPRESENTATION (X) ===================== */
 .representation-images {
-  margin-top: 3rem;
+  max-width: var(--max-page);
+  margin: 3rem auto 0 auto;
+  padding: 0 1.5rem;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
+  grid-template-columns: 1fr;
+  gap: 2rem;
 }
 .representation-images figure {
   margin: 0;
@@ -688,11 +690,6 @@ h2 {
 }
 .representation-images .sothebys-frame img {
   border: 2px solid #1c3f6e;
-}
-@media (max-width: 640px) {
-  .representation-images {
-    grid-template-columns: 1fr;
-  }
 }
 
 /* ===================== DIRECTIONS (IX) ===================== */
