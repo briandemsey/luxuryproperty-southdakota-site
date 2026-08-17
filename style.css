@@ -670,6 +670,31 @@ h2 {
   border-bottom-color: var(--accent-deep);
 }
 
+/* ===================== REPRESENTATION (X) ===================== */
+.representation-images {
+  margin-top: 3rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+.representation-images figure {
+  margin: 0;
+  padding: 0;
+}
+.representation-images img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.representation-images .sothebys-frame img {
+  border: 2px solid #1c3f6e;
+}
+@media (max-width: 640px) {
+  .representation-images {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ===================== DIRECTIONS (IX) ===================== */
 .advisory {
   margin: 0 0 3rem 0;
