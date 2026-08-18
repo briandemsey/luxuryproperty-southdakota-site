@@ -674,6 +674,19 @@ h2 {
   border-bottom-color: var(--accent-deep);
 }
 
+/* ===================== CINEMATIC REEL (XII) ===================== */
+.video-frame {
+  max-width: var(--max-page);
+  margin: 3rem auto 0 auto;
+  padding: 0 1.5rem;
+}
+.video-frame iframe {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 2px solid #1c3f6e;
+}
+
 /* ===================== REPRESENTATION (X) ===================== */
 .representation-images {
   max-width: var(--max-page);
