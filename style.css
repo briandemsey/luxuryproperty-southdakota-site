@@ -915,15 +915,18 @@ ol.route .note {
 .brochure-embed-head {
   margin-top: 4rem;
 }
-.brochure-embed-frame {
-  max-width: 680px;
-  margin: 0 auto;
+.brochure-pages {
+  max-width: 900px;
+  margin: 2.5rem auto 0 auto;
   padding: 0 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
-.brochure-embed-frame iframe {
+.brochure-pages img {
   display: block;
   width: 100%;
-  height: 480px;
+  height: auto;
   border: 1px solid var(--line);
   background: #fff;
 }
