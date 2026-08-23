@@ -903,6 +903,18 @@ ol.route .note {
   color: var(--muted);
   margin: 0;
 }
+.brochure-card-plain {
+  border: none;
+  background: transparent;
+}
+.brochure-card-image-plain {
+  aspect-ratio: auto;
+  background: transparent;
+}
+.brochure-card-image-plain img {
+  height: auto;
+  object-fit: contain;
+}
 @media (min-width: 700px) {
   .brochures-grid {
     grid-template-columns: repeat(2, 1fr);
