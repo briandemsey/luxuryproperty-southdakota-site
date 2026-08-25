@@ -207,6 +207,10 @@
       <p>
         The pages that follow describe the provenance of the design, the house as built, the site and its surrounding country, the framework of domicile in South Dakota, and the terms of introduction. A complete schedule of furnishings, art, and equipment &mdash; along with additional photography and documentation &mdash; will be provided to qualified buyers on request.
       </p>
+      <audio id="offering-audio" preload="none">
+        <source src="offering-audio.m4a" type="audio/mp4">
+        <source src="offering-audio.mp3" type="audio/mpeg">
+      </audio>
       <nav class="back-to-toc">
         <a href="#contents" data-nav="contents">Return to Contents</a>
       </nav>
@@ -816,6 +820,17 @@
         });
         document.body.className = 'view-' + name;
         window.scrollTo({ top: 0, behavior: opts.behavior || 'auto' });
+
+        var offeringAudio = document.getElementById('offering-audio');
+        if (offeringAudio) {
+          if (name === 'offering') {
+            offeringAudio.currentTime = 0;
+            offeringAudio.play().catch(function () {});
+          } else {
+            offeringAudio.pause();
+            offeringAudio.currentTime = 0;
+          }
+        }
         if (opts.updateHash !== false) {
           var newHash = (name === 'hero') ? '' : ('#' + name);
           if (('#' + name) !== location.hash && !(name === 'hero' && !location.hash)) {
