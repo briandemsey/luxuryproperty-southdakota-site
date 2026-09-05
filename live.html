@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live View &middot; Luxury Property South Dakota</title>
+<meta name="description" content="Live interior view of the property.">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* Page-specific styles, using the site's existing tokens */
+  .live-wrap {
+    max-width: var(--max-page, 1200px);
+    margin: 0 auto;
+    padding: 4rem 1.5rem 5rem;
+  }
+  .live-head {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+  .live-head .eyebrow {
+    font-family: var(--sans);
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-size: 0.72rem;
+    color: var(--accent-deep, #6d5628);
+    margin-bottom: 0.9rem;
+  }
+  .live-head h1 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    line-height: 1.05;
+    margin: 0 0 0.8rem;
+    color: var(--ink, #14171b);
+  }
+  .live-head p {
+    font-family: var(--sans);
+    color: var(--muted, #7c8189);
+    max-width: 40rem;
+    margin: 0 auto;
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+  .status-line {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-family: var(--sans);
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft, #3a3f47);
+    margin-top: 1.4rem;
+  }
+  .dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: #c0392b;
+    box-shadow: 0 0 0 0 rgba(192,57,43,0.5);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(192,57,43,0.5); }
+    70%  { box-shadow: 0 0 0 8px rgba(192,57,43,0); }
+    100% { box-shadow: 0 0 0 0 rgba(192,57,43,0); }
+  }
+  .player-frame {
+    position: relative;
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+    aspect-ratio: 16 / 9;
+    background: #0c0d0f;
+    border: 1px solid var(--line, #cec8b8);
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 24px 60px -30px rgba(0,0,0,0.45);
+  }
+  .player-frame iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+  /* Offline overlay: shown until JS confirms a live stream, or if the embed reports none */
+  .offline {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+    background:
+      radial-gradient(120% 120% at 50% 30%, #1c1f24 0%, #0c0d0f 70%);
+    color: rgba(255,255,255,0.9);
+    font-family: var(--serif);
+  }
+  .offline svg { width: 46px; height: 46px; opacity: 0.7; margin-bottom: 1.1rem; }
+  .offline h2 {
+    font-weight: 500;
+    font-size: 1.5rem;
+    margin: 0 0 0.5rem;
+    color: #fff;
+  }
+  .offline p {
+    font-family: var(--sans);
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.6);
+    max-width: 26rem;
+    margin: 0;
+    line-height: 1.5;
+  }
+  .back-link {
+    display: block;
+    text-align: center;
+    margin-top: 2.6rem;
+    font-family: var(--sans);
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent-deep, #6d5628);
+  }
+</style>
+</head>
+<body>
+  <main class="live-wrap">
+    <div class="live-head">
+      <div class="eyebrow">Luxury Property &middot; South Dakota</div>
+      <h1>Live View</h1>
+      <p>A continuous live view from inside the property. The feed runs during
+         daylight and beyond; if it is momentarily offline it will return on
+         its own.</p>
+      <div class="status-line" id="statusLine" style="display:none">
+        <span class="dot"></span> Live now
+      </div>
+    </div>
+
+    <div class="player-frame">
+      <!-- YouTube "live_stream" embed: automatically plays whatever is currently
+           live on the channel, and shows nothing when the channel is offline. -->
+      <iframe id="liveFrame"
+        src="https://www.youtube.com/embed/live_stream?channel=UCdeuc8-7JKUUg4sW4MlMpEw&autoplay=1&mute=1&playsinline=1&rel=0"
+        allow="autoplay; encrypted-media; picture-in-picture"
+        allowfullscreen
+        title="Live property view"></iframe>
+
+      <!-- Offline overlay shown by default; hidden once we detect a live stream. -->
+      <div class="offline" id="offline">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M23 7l-7 5 7 5V7z"></path>
+          <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+        </svg>
+        <h2>The camera is offline right now</h2>
+        <p>The live view is not broadcasting at the moment. It returns
+           automatically once the feed reconnects. Please check back shortly.</p>
+      </div>
+    </div>
+
+    <a class="back-link" href="/">&larr; Back to the property</a>
+  </main>
+
+<script>
+  // Ask YouTube whether the channel is actually live. If yes, reveal the player
+  // and the "Live now" badge; if no, keep the offline overlay in place.
+  // We use the public oEmbed/live_stream behavior: the embed above already
+  // shows a black frame when offline, so the overlay is the graceful default.
+  (function () {
+    var CHANNEL = "UCdeuc8-7JKUUg4sW4MlMpEw";
+    var offline = document.getElementById("offline");
+    var status  = document.getElementById("statusLine");
+    var frame   = document.getElementById("liveFrame");
+
+    // Lightweight liveness probe: try to load the channel's live oEmbed.
+    // oEmbed succeeds only when a live (or premiering) video exists.
+    var probe = "https://www.youtube.com/oembed?format=json&url=" +
+      encodeURIComponent("https://www.youtube.com/channel/" + CHANNEL + "/live");
+
+    fetch(probe, { mode: "cors" })
+      .then(function (r) {
+        if (r.ok) return r.json();
+        throw new Error("no live stream");
+      })
+      .then(function () {
+        // Live confirmed: hide overlay, show the "Live now" badge.
+        offline.style.display = "none";
+        status.style.display = "inline-flex";
+      })
+      .catch(function () {
+        // Not confirmed live (offline, or the probe was blocked by CORS).
+        // Keep the offline overlay up and the badge hidden — never claim
+        // "live" without a positive confirmation. Recheck every 60s.
+        offline.style.display = "flex";
+        status.style.display = "none";
+        setTimeout(recheck, 60000);
+      });
+
+    function recheck() {
+      fetch(probe, { mode: "cors" })
+        .then(function (r) {
+          if (r.ok) {
+            offline.style.display = "none";
+            status.style.display = "inline-flex";
+          } else {
+            setTimeout(recheck, 60000);
+          }
+        })
+        .catch(function () { setTimeout(recheck, 60000); });
+    }
+  })();
+</script>
+</body>
+</html>

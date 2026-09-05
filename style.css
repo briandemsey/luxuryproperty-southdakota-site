@@ -966,3 +966,24 @@ footer {
 @media (prefers-reduced-motion: reduce) {
   * { scroll-behavior: auto !important; transition: none !important; }
 }
+
+/* Livestream section CTA button */
+.livestream-cta-wrap {
+  margin-top: 1.6rem;
+}
+.livestream-cta {
+  display: inline-block;
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--accent-deep);
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--accent);
+  transition: border-color 0.2s ease, color 0.2s ease, letter-spacing 0.25s ease;
+}
+.livestream-cta:hover {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+  letter-spacing: 0.30em;
+}
