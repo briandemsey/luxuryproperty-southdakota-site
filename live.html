@@ -138,11 +138,11 @@
     </div>
 
     <div class="player-frame">
-      <!-- The continuous broadcast. This is a permanent 24/7 stream, so the
-           video ID is stable; if the broadcast ever ends and is restarted,
-           YouTube issues a new ID and LIVE_VIDEO_ID below must be updated. -->
+      <!-- The continuous broadcast. The video ID is not written here: it is
+           read from live-config.json so that restarting the stream is a
+           one-line edit to that file rather than a change to this page. -->
       <iframe id="liveFrame"
-        src="https://www.youtube.com/embed/uvHOD5OyzME?autoplay=1&mute=1&playsinline=1&rel=0&enablejsapi=1"
+        src="about:blank"
         allow="autoplay; encrypted-media; picture-in-picture"
         allowfullscreen
         title="Live property view"></iframe>
@@ -168,10 +168,12 @@
   // offline panel are driven by the player's real state, so the page never
   // claims to be live when the feed is not actually running.
   (function () {
-    var LIVE_VIDEO_ID = "uvHOD5OyzME";
+    // Fallback used only if live-config.json cannot be read.
+    var FALLBACK_VIDEO_ID = "uvHOD5OyzME";
 
     var statusEl  = document.getElementById("statusLine");
     var offlineEl = document.getElementById("offline");
+    var frameEl   = document.getElementById("liveFrame");
     var player, settled = false;
 
     // Start in the offline state; the player promotes us to live once it plays.
@@ -185,13 +187,72 @@
     }
     showOffline();
 
-    // Load the IFrame API, which is what lets us read playback state.
+    // The config fetch and the API load race each other, so track both and
+    // create the player once whichever finishes last.
+    var apiReady = false, frameReady = false;
+
+    function createPlayerWhenReady() {
+      if (!apiReady || !frameReady || player) return;
+      player = buildPlayer();
+    }
+
+    // Point the player at whichever broadcast live-config.json names. A stale
+    // cache here would strand the page on an old ID, so the request bypasses it.
+    function startPlayer(videoId) {
+      frameEl.src = "https://www.youtube.com/embed/" + encodeURIComponent(videoId) +
+                    "?autoplay=1&mute=1&playsinline=1&rel=0&enablejsapi=1";
+      frameReady = true;
+      createPlayerWhenReady();
+
+      // State events do not always arrive promptly, so after 12 seconds ask
+      // the player directly rather than assuming the feed is down. Only fall
+      // back to the offline panel if it truly is not playing.
+      setTimeout(function () {
+        if (settled) return;
+        var state = null;
+        try { state = player && player.getPlayerState(); } catch (e) {}
+        if (state === 1 || state === 3) {   // PLAYING or BUFFERING
+          showLive();
+        } else {
+          showOffline();
+        }
+      }, 12000);
+
+      // Keep checking every 15 seconds so a feed that drops or returns while
+      // someone is on the page is reflected without a manual reload.
+      setInterval(function () {
+        var state = null;
+        try { state = player && player.getPlayerState(); } catch (e) { return; }
+        if (state === 1 || state === 3) {
+          showLive();
+        } else if (state === 0 || state === 5 || state === -1) {
+          // Ended, cued but never started, or unstarted: not a live feed.
+          showOffline();
+        }
+      }, 15000);
+    }
+
+    fetch("live-config.json", { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (cfg) {
+        startPlayer((cfg && cfg.videoId) ? cfg.videoId : FALLBACK_VIDEO_ID);
+      })
+      .catch(function () {
+        startPlayer(FALLBACK_VIDEO_ID);
+      });
+
+    // Load the IFrame API immediately, in parallel with the config fetch.
     var tag = document.createElement("script");
     tag.src = "https://www.youtube.com/iframe_api";
     document.head.appendChild(tag);
 
     window.onYouTubeIframeAPIReady = function () {
-      player = new YT.Player("liveFrame", {
+      apiReady = true;
+      createPlayerWhenReady();
+    };
+
+    function buildPlayer() {
+      return new YT.Player("liveFrame", {
         events: {
           onStateChange: function (e) {
             // PLAYING or BUFFERING means the feed is genuinely coming through.
@@ -212,13 +273,8 @@
           }
         }
       });
-    };
+    }
 
-    // If nothing has started within 12 seconds, treat the feed as down rather
-    // than leaving a spinner over a page that promises a live view.
-    setTimeout(function () {
-      if (!settled) showOffline();
-    }, 12000);
   })();
 </script>
 </body>

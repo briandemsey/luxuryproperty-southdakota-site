@@ -1,0 +1,4 @@
+{
+  "_comment": "The YouTube video ID of the current live broadcast. When the broadcast ends and is restarted, YouTube issues a new ID: open the stream in YouTube Studio, copy the ID from the address bar (the part between /video/ and /livestreaming), paste it below, and push. Nothing else needs to change.",
+  "videoId": "uvHOD5OyzME"
+}
