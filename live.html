@@ -138,16 +138,15 @@
     </div>
 
     <div class="player-frame">
-      <!-- YouTube "live_stream" embed: automatically plays whatever is currently
-           live on the channel, and shows nothing when the channel is offline. -->
+      <!-- Direct embed of the live broadcast video. -->
       <iframe id="liveFrame"
-        src="https://www.youtube.com/embed/live_stream?channel=UCdeuc8-7JKUUg4sW4MlMpEw&autoplay=1&mute=1&playsinline=1&rel=0"
+        src="https://www.youtube.com/embed/cSxZor1MMA0?autoplay=1&mute=1&playsinline=1&rel=0"
         allow="autoplay; encrypted-media; picture-in-picture"
         allowfullscreen
         title="Live property view"></iframe>
 
-      <!-- Offline overlay shown by default; hidden once we detect a live stream. -->
-      <div class="offline" id="offline">
+      <!-- Offline overlay, hidden while the broadcast is playing. -->
+      <div class="offline" id="offline" style="display:none">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"
              stroke-linecap="round" stroke-linejoin="round">
           <path d="M23 7l-7 5 7 5V7z"></path>
@@ -163,52 +162,11 @@
   </main>
 
 <script>
-  // Ask YouTube whether the channel is actually live. If yes, reveal the player
-  // and the "Live now" badge; if no, keep the offline overlay in place.
-  // We use the public oEmbed/live_stream behavior: the embed above already
-  // shows a black frame when offline, so the overlay is the graceful default.
+  // The broadcast is embedded directly by video ID above and simply plays.
+  // Show the "Live now" badge.
   (function () {
-    var CHANNEL = "UCdeuc8-7JKUUg4sW4MlMpEw";
-    var offline = document.getElementById("offline");
-    var status  = document.getElementById("statusLine");
-    var frame   = document.getElementById("liveFrame");
-
-    // Lightweight liveness probe: try to load the channel's live oEmbed.
-    // oEmbed succeeds only when a live (or premiering) video exists.
-    var probe = "https://www.youtube.com/oembed?format=json&url=" +
-      encodeURIComponent("https://www.youtube.com/channel/" + CHANNEL + "/live");
-
-    fetch(probe, { mode: "cors" })
-      .then(function (r) {
-        if (r.ok) return r.json();
-        throw new Error("no live stream");
-      })
-      .then(function () {
-        // Live confirmed: hide overlay, show the "Live now" badge.
-        offline.style.display = "none";
-        status.style.display = "inline-flex";
-      })
-      .catch(function () {
-        // Not confirmed live (offline, or the probe was blocked by CORS).
-        // Keep the offline overlay up and the badge hidden — never claim
-        // "live" without a positive confirmation. Recheck every 60s.
-        offline.style.display = "flex";
-        status.style.display = "none";
-        setTimeout(recheck, 60000);
-      });
-
-    function recheck() {
-      fetch(probe, { mode: "cors" })
-        .then(function (r) {
-          if (r.ok) {
-            offline.style.display = "none";
-            status.style.display = "inline-flex";
-          } else {
-            setTimeout(recheck, 60000);
-          }
-        })
-        .catch(function () { setTimeout(recheck, 60000); });
-    }
+    var status = document.getElementById("statusLine");
+    if (status) status.style.display = "inline-flex";
   })();
 </script>
 </body>
