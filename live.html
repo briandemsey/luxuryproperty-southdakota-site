@@ -138,15 +138,17 @@
     </div>
 
     <div class="player-frame">
-      <!-- Direct embed of the live broadcast video. -->
+      <!-- The continuous broadcast. This is a permanent 24/7 stream, so the
+           video ID is stable; if the broadcast ever ends and is restarted,
+           YouTube issues a new ID and LIVE_VIDEO_ID below must be updated. -->
       <iframe id="liveFrame"
-        src="https://www.youtube.com/embed/cSxZor1MMA0?autoplay=1&mute=1&playsinline=1&rel=0"
+        src="https://www.youtube.com/embed/uvHOD5OyzME?autoplay=1&mute=1&playsinline=1&rel=0&enablejsapi=1"
         allow="autoplay; encrypted-media; picture-in-picture"
         allowfullscreen
         title="Live property view"></iframe>
 
-      <!-- Offline overlay, hidden while the broadcast is playing. -->
-      <div class="offline" id="offline" style="display:none">
+      <!-- Offline overlay, shown whenever the feed is not actually playing. -->
+      <div class="offline" id="offline">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"
              stroke-linecap="round" stroke-linejoin="round">
           <path d="M23 7l-7 5 7 5V7z"></path>
@@ -162,11 +164,61 @@
   </main>
 
 <script>
-  // The broadcast is embedded directly by video ID above and simply plays.
-  // Show the "Live now" badge.
+  // The broadcast is embedded by video ID above. The "Live now" badge and the
+  // offline panel are driven by the player's real state, so the page never
+  // claims to be live when the feed is not actually running.
   (function () {
-    var status = document.getElementById("statusLine");
-    if (status) status.style.display = "inline-flex";
+    var LIVE_VIDEO_ID = "uvHOD5OyzME";
+
+    var statusEl  = document.getElementById("statusLine");
+    var offlineEl = document.getElementById("offline");
+    var player, settled = false;
+
+    // Start in the offline state; the player promotes us to live once it plays.
+    function showOffline() {
+      if (offlineEl) offlineEl.style.display = "flex";
+      if (statusEl)  statusEl.style.display  = "none";
+    }
+    function showLive() {
+      if (offlineEl) offlineEl.style.display = "none";
+      if (statusEl)  statusEl.style.display  = "inline-flex";
+    }
+    showOffline();
+
+    // Load the IFrame API, which is what lets us read playback state.
+    var tag = document.createElement("script");
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.head.appendChild(tag);
+
+    window.onYouTubeIframeAPIReady = function () {
+      player = new YT.Player("liveFrame", {
+        events: {
+          onStateChange: function (e) {
+            // PLAYING or BUFFERING means the feed is genuinely coming through.
+            if (e.data === YT.PlayerState.PLAYING ||
+                e.data === YT.PlayerState.BUFFERING) {
+              settled = true;
+              showLive();
+            } else if (e.data === YT.PlayerState.ENDED) {
+              // The broadcast finished: the ID is now stale.
+              settled = true;
+              showOffline();
+            }
+          },
+          onError: function () {
+            // Unavailable, removed, or no longer embeddable.
+            settled = true;
+            showOffline();
+          }
+        }
+      });
+    };
+
+    // If nothing has started within 12 seconds, treat the feed as down rather
+    // than leaving a spinner over a page that promises a live view.
+    setTimeout(function () {
+      if (!settled) showOffline();
+    }, 12000);
   })();
 </script>
 </body>
