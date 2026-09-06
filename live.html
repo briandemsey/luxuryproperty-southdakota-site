@@ -75,14 +75,18 @@
     overflow: hidden;
     box-shadow: 0 24px 60px -30px rgba(0,0,0,0.45);
   }
-  .player-frame iframe {
+  /* The frame itself. Opacity is eased so each refresh reads as a gentle
+     update rather than a flicker. */
+  .player-frame img {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
-    border: 0;
+    object-fit: cover;
+    display: block;
+    transition: opacity 220ms ease;
   }
-  /* Offline overlay: shown until JS confirms a live stream, or if the embed reports none */
+  /* Offline overlay: shown when frames stop arriving. */
   .offline {
     position: absolute;
     inset: 0;
@@ -112,6 +116,14 @@
     margin: 0;
     line-height: 1.5;
   }
+  .timestamp {
+    text-align: center;
+    margin-top: 1.1rem;
+    font-family: var(--sans);
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    color: var(--muted, #7c8189);
+  }
   .back-link {
     display: block;
     text-align: center;
@@ -129,25 +141,17 @@
     <div class="live-head">
       <div class="eyebrow">Luxury Property &middot; South Dakota</div>
       <h1>Live View</h1>
-      <p>A continuous live view from inside the property. The feed runs during
-         daylight and beyond; if it is momentarily offline it will return on
-         its own.</p>
+      <p>A continuous live view from inside the property. The image refreshes
+         every few seconds throughout the day; if it pauses briefly it
+         resumes on its own.</p>
       <div class="status-line" id="statusLine" style="display:none">
         <span class="dot"></span> Live now
       </div>
     </div>
 
     <div class="player-frame">
-      <!-- The continuous broadcast. The video ID is not written here: it is
-           read from live-config.json so that restarting the stream is a
-           one-line edit to that file rather than a change to this page. -->
-      <iframe id="liveFrame"
-        src="about:blank"
-        allow="autoplay; encrypted-media; picture-in-picture"
-        allowfullscreen
-        title="Live property view"></iframe>
+      <img id="liveImg" alt="Live view from the property" />
 
-      <!-- Offline overlay, shown whenever the feed is not actually playing. -->
       <div class="offline" id="offline">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"
              stroke-linecap="round" stroke-linejoin="round">
@@ -155,126 +159,80 @@
           <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
         </svg>
         <h2>The camera is offline right now</h2>
-        <p>The live view is not broadcasting at the moment. It returns
-           automatically once the feed reconnects. Please check back shortly.</p>
+        <p>The live view is not updating at the moment. It returns
+           automatically once the camera reconnects. Please check back shortly.</p>
       </div>
     </div>
+
+    <div class="timestamp" id="stamp"></div>
 
     <a class="back-link" href="/">&larr; Back to the property</a>
   </main>
 
 <script>
-  // The broadcast is embedded by video ID above. The "Live now" badge and the
-  // offline panel are driven by the player's real state, so the page never
-  // claims to be live when the feed is not actually running.
+  // The camera uploads a fresh frame to object storage every few seconds. This
+  // page reloads it on a timer and shows the offline panel if frames stop
+  // arriving, so it never claims to be live over a stalled image.
   (function () {
-    // Fallback used only if live-config.json cannot be read.
-    var FALLBACK_VIDEO_ID = "uvHOD5OyzME";
+    var FRAME_URL   = "https://pub-d06c872f6bd94953a10eeb340d1a72fc.r2.dev/frame.jpg";
+    var REFRESH_MS  = 5000;    // how often to pull a new frame
+    var STALE_MS    = 90000;   // no successful frame in this long means offline
 
-    var statusEl  = document.getElementById("statusLine");
+    var imgEl     = document.getElementById("liveImg");
     var offlineEl = document.getElementById("offline");
-    var frameEl   = document.getElementById("liveFrame");
-    var player, settled = false;
+    var statusEl  = document.getElementById("statusLine");
+    var stampEl   = document.getElementById("stamp");
 
-    // Start in the offline state; the player promotes us to live once it plays.
-    function showOffline() {
-      if (offlineEl) offlineEl.style.display = "flex";
-      if (statusEl)  statusEl.style.display  = "none";
-    }
+    var lastGood = 0;
+
     function showLive() {
-      if (offlineEl) offlineEl.style.display = "none";
-      if (statusEl)  statusEl.style.display  = "inline-flex";
+      offlineEl.style.display = "none";
+      statusEl.style.display  = "inline-flex";
+    }
+    function showOffline() {
+      offlineEl.style.display = "flex";
+      statusEl.style.display  = "none";
+      stampEl.textContent = "";
     }
     showOffline();
 
-    // The config fetch and the API load race each other, so track both and
-    // create the player once whichever finishes last.
-    var apiReady = false, frameReady = false;
-
-    function createPlayerWhenReady() {
-      if (!apiReady || !frameReady || player) return;
-      player = buildPlayer();
+    function stamp() {
+      try {
+        stampEl.textContent = "Updated " + new Date().toLocaleTimeString([], {
+          hour: "numeric", minute: "2-digit"
+        });
+      } catch (e) { stampEl.textContent = ""; }
     }
 
-    // Point the player at whichever broadcast live-config.json names. A stale
-    // cache here would strand the page on an old ID, so the request bypasses it.
-    function startPlayer(videoId) {
-      frameEl.src = "https://www.youtube.com/embed/" + encodeURIComponent(videoId) +
-                    "?autoplay=1&mute=1&playsinline=1&rel=0&enablejsapi=1";
-      frameReady = true;
-      createPlayerWhenReady();
-
-      // State events do not always arrive promptly, so after 12 seconds ask
-      // the player directly rather than assuming the feed is down. Only fall
-      // back to the offline panel if it truly is not playing.
-      setTimeout(function () {
-        if (settled) return;
-        var state = null;
-        try { state = player && player.getPlayerState(); } catch (e) {}
-        if (state === 1 || state === 3) {   // PLAYING or BUFFERING
-          showLive();
-        } else {
-          showOffline();
-        }
-      }, 12000);
-
-      // Keep checking every 15 seconds so a feed that drops or returns while
-      // someone is on the page is reflected without a manual reload.
-      setInterval(function () {
-        var state = null;
-        try { state = player && player.getPlayerState(); } catch (e) { return; }
-        if (state === 1 || state === 3) {
-          showLive();
-        } else if (state === 0 || state === 5 || state === -1) {
-          // Ended, cued but never started, or unstarted: not a live feed.
-          showOffline();
-        }
-      }, 15000);
+    // Load into a detached image first so a failed fetch never blanks the
+    // frame already on screen.
+    function refresh() {
+      var next = new Image();
+      next.onload = function () {
+        lastGood = Date.now();
+        imgEl.src = next.src;
+        showLive();
+        stamp();
+      };
+      next.onerror = function () {
+        if (Date.now() - lastGood > STALE_MS) showOffline();
+      };
+      // Cache busting: without this the browser serves the previous frame.
+      next.src = FRAME_URL + "?t=" + Date.now();
     }
 
-    fetch("live-config.json", { cache: "no-store" })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (cfg) {
-        startPlayer((cfg && cfg.videoId) ? cfg.videoId : FALLBACK_VIDEO_ID);
-      })
-      .catch(function () {
-        startPlayer(FALLBACK_VIDEO_ID);
-      });
+    refresh();
+    setInterval(refresh, REFRESH_MS);
 
-    // Load the IFrame API immediately, in parallel with the config fetch.
-    var tag = document.createElement("script");
-    tag.src = "https://www.youtube.com/iframe_api";
-    document.head.appendChild(tag);
+    // A frame that stops updating is as offline as one that fails to load.
+    setInterval(function () {
+      if (lastGood && Date.now() - lastGood > STALE_MS) showOffline();
+    }, 5000);
 
-    window.onYouTubeIframeAPIReady = function () {
-      apiReady = true;
-      createPlayerWhenReady();
-    };
-
-    function buildPlayer() {
-      return new YT.Player("liveFrame", {
-        events: {
-          onStateChange: function (e) {
-            // PLAYING or BUFFERING means the feed is genuinely coming through.
-            if (e.data === YT.PlayerState.PLAYING ||
-                e.data === YT.PlayerState.BUFFERING) {
-              settled = true;
-              showLive();
-            } else if (e.data === YT.PlayerState.ENDED) {
-              // The broadcast finished: the ID is now stale.
-              settled = true;
-              showOffline();
-            }
-          },
-          onError: function () {
-            // Unavailable, removed, or no longer embeddable.
-            settled = true;
-            showOffline();
-          }
-        }
-      });
-    }
-
+    // Pause refreshing while the tab is hidden, resume on return.
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden) refresh();
+    });
   })();
 </script>
 </body>
