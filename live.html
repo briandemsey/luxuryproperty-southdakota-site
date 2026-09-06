@@ -221,18 +221,51 @@
       next.src = FRAME_URL + "?t=" + Date.now();
     }
 
-    refresh();
-    setInterval(refresh, REFRESH_MS);
+    var timer = null, staleTimer = null;
 
-    // A frame that stops updating is as offline as one that fails to load.
-    setInterval(function () {
-      if (lastGood && Date.now() - lastGood > STALE_MS) showOffline();
-    }, 5000);
+    function start() {
+      if (timer) return;
+      refresh();
+      timer = setInterval(refresh, REFRESH_MS);
+      // A frame that stops updating is as offline as one that fails to load.
+      staleTimer = setInterval(function () {
+        if (lastGood && Date.now() - lastGood > STALE_MS) showOffline();
+      }, 5000);
+    }
 
-    // Pause refreshing while the tab is hidden, resume on return.
+    function stop() {
+      clearInterval(timer);      timer = null;
+      clearInterval(staleTimer); staleTimer = null;
+    }
+
+    // Nobody is watching a hidden tab, so stop fetching entirely rather than
+    // downloading a frame every few seconds into a tab left open for hours.
     document.addEventListener("visibilitychange", function () {
-      if (!document.hidden) refresh();
+      if (document.hidden) stop(); else start();
     });
+
+    // Someone can leave a visible tab open and walk away. Watch for real
+    // interaction and idle out after a while, so an abandoned page stops
+    // pulling frames until the viewer comes back to it.
+    var lastSeen = Date.now();
+    var IDLE_MS  = 600000;   // ten minutes with no interaction
+
+    ["mousemove", "mousedown", "keydown", "scroll", "touchstart", "focus"]
+      .forEach(function (evt) {
+        window.addEventListener(evt, function () {
+          lastSeen = Date.now();
+          if (!timer && !document.hidden) start();
+        }, { passive: true });
+      });
+
+    setInterval(function () {
+      if (timer && Date.now() - lastSeen > IDLE_MS) stop();
+    }, 30000);
+
+    // Release the timers when the page goes away.
+    window.addEventListener("pagehide", stop);
+
+    start();
   })();
 </script>
 </body>
